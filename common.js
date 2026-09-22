@@ -40,7 +40,8 @@ button,a{transition:transform .12s ease,background .15s ease,box-shadow .15s eas
 function showLoader(t){let l=document.getElementById('loader');if(!l){l=document.createElement('div');l.id='loader';l.className='fixed inset-0 z-[60] p-6';l.style.backgroundColor='#0b1220';document.body.appendChild(l);}l.style.display='block';l.innerHTML=`<div class="max-w-6xl mx-auto space-y-4 pt-10"><div class="skel h-8 w-64"></div><div class="grid grid-cols-4 gap-4"><div class="skel h-28"></div><div class="skel h-28"></div><div class="skel h-28"></div><div class="skel h-28"></div></div><div class="skel h-64"></div><div class="text-center text-xs opacity-50">${t||'Loading live data...'}</div></div>`;}
 function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<10)return'just now';if(s<60)return s+'s ago';const m=Math.floor(s/60);if(m<60)return m+' min ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function emptyBox(t){return `<div class="text-center py-8 opacity-50"><div class="lottie" data-h="90"></div><div class="text-4xl mb-2">📭</div><div class="text-sm">${t}</div></div>`;}
-// browser + OS from user-agent (pc name er pase dekhabe)
+// browser + OS (extension exact pathay, fallback: UA parse)
+function parseUAfromEvent(e){const d=(e&&e.data)||{};if(d.browser)return (d.browser+(d.os?' • '+d.os:''));return parseUA(d.ua);}
 function parseUA(ua){ua=ua||'';let b='Unknown',os='Unknown';
 let m=ua.match(/Edg\/([\d.]+)/);if(m)b='Edge '+m[1].split('.')[0];
 else if(m=ua.match(/OPR\/([\d.]+)/))b='Opera '+m[1].split('.')[0];
@@ -104,11 +105,11 @@ function devicePicker(force){
   ov.innerHTML=`<div class="bg-[#111c33] border border-white/10 rounded-3xl p-6 w-[360px] max-w-[90vw]"><h2 class="text-lg font-black mb-1 flex items-center gap-2"><i data-lucide="monitor" class="w-5 h-5"></i>Select Device</h2><p class="text-xs opacity-50 mb-3">Which device do you want to monitor?</p><div id="devpick_list" class="space-y-2 max-h-[50vh] overflow-auto"><div class="text-sm opacity-50">Loading...</div></div>${QDEV?`<button onclick="document.getElementById('devpick').remove()" class="mt-3 text-xs opacity-60">✕ Close</button>`:''}</div>`;
   db.ref('events').limitToLast(500).once('value').then(s=>{
     const a=Object.values(s.val()||{});const m={};
-    a.forEach(e=>{(m[e.clientId]||={last:0,ua:''});m[e.clientId].last=Math.max(m[e.clientId].last,e.ts);if(e.type==='device_online'&&e.data?.ua)m[e.clientId].ua=e.data.ua;});
+    a.forEach(e=>{(m[e.clientId]||={last:0,info:null});m[e.clientId].last=Math.max(m[e.clientId].last,e.ts);if(e.type==='device_online'&&e.data)m[e.clientId].info=e.data;});
     const ids=Object.keys(m).filter(id=>!HIDDEN[id]);
     document.getElementById('devpick_list').innerHTML=ids.length?ids.map(id=>{
       const online=(Date.now()-m[id].last)<ONLINE_MS;
-      return `<button onclick="location.href='${base}?c=${encodeURIComponent(id)}'" class="w-full text-left px-4 py-3 rounded-2xl bg-white/5 hover:bg-emerald-400 hover:text-slate-950 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${online?'bg-emerald-400':'bg-red-500'}"></span><span><b>${id}</b><span class="block text-[11px] opacity-60">${parseUA(m[id].ua)}</span></span><span class="text-[11px] opacity-60 ml-auto">${online?'online':new Date(m[id].last).toLocaleTimeString()}</span></button>`;}).join(''):'<div class="text-sm opacity-50">No devices yet</div>';
+      return `<button onclick="location.href='${base}?c=${encodeURIComponent(id)}'" class="w-full text-left px-4 py-3 rounded-2xl bg-white/5 hover:bg-emerald-400 hover:text-slate-950 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${online?'bg-emerald-400':'bg-red-500'}"></span><span><b>${id}</b><span class="block text-[11px] opacity-60">${parseUAfromEvent({data:m[id].info})}</span></span><span class="text-[11px] opacity-60 ml-auto">${online?'online':new Date(m[id].last).toLocaleTimeString()}</span></button>`;}).join(''):'<div class="text-sm opacity-50">No devices yet</div>';
   });
 }
 // offline alert: 5min+ silent device -> telegram (1h e 1bar per device)
