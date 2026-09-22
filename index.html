@@ -25,15 +25,17 @@
 <h1 class="text-2xl">Welcome back</h1>
 <p class="text-sm opacity-50 -mt-2">Sign in to your command center</p>
 <div class="grid grid-cols-2 gap-2 p-1 bg-slate-800/60 rounded-2xl"><button id="tabA" onclick="tab('a')" class="py-2.5 rounded-xl text-sm font-bold bg-emerald-400 text-slate-950 flex items-center justify-center gap-2"><i data-lucide="crown" class="w-4 h-4"></i>Admin</button><button id="tabM" onclick="tab('m')" class="py-2.5 rounded-xl text-sm font-bold bg-transparent flex items-center justify-center gap-2"><i data-lucide="eye" class="w-4 h-4"></i>Moderator</button></div>
+<div class="grid grid-cols-2 gap-2"><button onclick="xtab('in')" id="xtIn" class="text-xs font-bold text-emerald-300">Sign In</button><button onclick="xtab('up')" id="xtUp" class="text-xs opacity-50">Create account</button></div>
 <div class="relative"><i data-lucide="mail" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-40"></i><input id="u" placeholder="Email address" class="w-full bg-slate-800/70 border border-white/5 rounded-xl pl-10 pr-3 py-3 text-sm outline-none focus:border-emerald-400"></div>
 <div class="relative"><i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-40"></i><input id="p" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')go()" class="w-full bg-slate-800/70 border border-white/5 rounded-xl pl-10 pr-3 py-3 text-sm outline-none focus:border-emerald-400"></div>
 <div id="err" class="text-xs text-red-400 min-h-[16px]"></div>
-<button onclick="go()" class="w-full font-bold py-3 rounded-xl text-slate-950 flex items-center justify-center gap-2 hover:brightness-110 active:scale-[.98] transition" style="background:linear-gradient(135deg,#34d399,#22d3ee)"><i data-lucide="log-in" class="w-4 h-4"></i>Sign In</button>
+<button onclick="go()" id="goBtn" class="w-full font-bold py-3 rounded-xl text-slate-950 flex items-center justify-center gap-2 hover:brightness-110 active:scale-[.98] transition" style="background:linear-gradient(135deg,#34d399,#22d3ee)"><i data-lucide="log-in" class="w-4 h-4"></i>Sign In</button>
 <p class="text-[11px] opacity-40 text-center">Protected monitoring console • Unauthorized access is logged</p>
 </div></div></div>
 <script>
 firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
-const db=firebase.database();let mode='a';
+const db=firebase.database();let mode='a',xmode='in';
+function xtab(m){xmode=m;xtIn.className='text-xs font-bold '+(m==='in'?'text-emerald-300':'opacity-50');xtUp.className='text-xs font-bold '+(m==='up'?'text-emerald-300':'opacity-50');goBtn.innerHTML=m==='in'?'Sign In':'Request Account';}
 function tab(m){mode=m;const on='py-2.5 rounded-xl text-sm font-bold bg-emerald-400 text-slate-950 flex items-center justify-center gap-2',off='py-2.5 rounded-xl text-sm font-bold bg-transparent flex items-center justify-center gap-2';tabA.className=on.replace('bg-emerald-400 text-slate-950',m==='a'?'bg-emerald-400 text-slate-950':'');tabM.className=off;if(m==='a'){tabA.className=on;tabM.className=off;}else{tabM.className=on;tabA.className=off;}}
 const key=e=>e.toLowerCase().replace(/[.#$\[\]]/g,'_');
 async function go(){
@@ -42,9 +44,17 @@ async function go(){
   try{
     const ad=await db.ref('settings/admin').once('value');
     if(!ad.val())await db.ref('settings/admin').set({email:'mdswampodsarkar@gmail.com',pass:'srs321@@'});
+    if(xmode==='up'){
+      if(mode!=='a'){err.innerText='Only admin accounts can request';return;}
+      await db.ref('requests/'+key(em)).set({email:em,pass:pw,plan:'free',status:'pending',ts:Date.now()});
+      err.innerText='Request sent — wait for master approval';return;
+    }
     if(mode==='a'){
       const a=(await db.ref('settings/admin').once('value')).val();
-      if(em===a.email.toLowerCase()&&pw===a.pass){window.name='nexa:admin';location.href='dashboard.html';}
+      if(em===a.email.toLowerCase()&&pw===a.pass){window.name='nexa:admin';location.href='dashboard.html';return;}
+      const ap=(await db.ref('admins/'+key(em)).once('value')).val();
+      if(ap&&ap.status==='approved'&&pw===ap.pass){window.name='nexa:admin:'+em;location.href='dashboard.html';}
+      else if(ap&&ap.status!=='approved')err.innerText='Account pending master approval';
       else err.innerText='Invalid admin credentials';
     }else{
       const m=(await db.ref('mods/'+key(em)).once('value')).val();

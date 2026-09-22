@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@700;800&display=swap">
+<style>body{font-family:'Inter',sans-serif}h1{font-family:'Sora',sans-serif}</style></head>
+<body class="bg-[#0b1220] text-slate-100 min-h-screen" onload="lucide.createIcons()">
+<div id="login" class="min-h-screen grid place-items-center p-4"><div class="bg-slate-900 border border-amber-400/30 p-8 rounded-3xl w-[360px] space-y-3">
+<div class="flex items-center gap-2"><span class="w-9 h-9 rounded-xl grid place-items-center font-black text-slate-950" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">M</span><div><h1 class="text-xl">Master Panel</h1><div class="text-[10px] tracking-widest opacity-50">OWNER ONLY</div></div></div>
+<input id="u" placeholder="master email" class="w-full bg-slate-800 rounded-xl px-3 py-2.5 text-sm"><input id="p" type="password" placeholder="password" class="w-full bg-slate-800 rounded-xl px-3 py-2.5 text-sm">
+<div id="err" class="text-xs text-red-400"></div>
+<button onclick="go()" class="w-full bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl">Unlock</button></div></div>
+<div id="main" class="hidden p-4 md:p-6 max-w-4xl mx-auto space-y-4">
+<div class="flex items-center gap-2"><h1 class="text-2xl">Master Panel</h1><button onclick="location.reload()" class="ml-auto text-xs bg-slate-800 rounded-lg px-3 py-2">Logout</button></div>
+<div class="flex gap-2"><button onclick="mtab(0)" id="mt0" class="text-sm px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-bold">Account Requests <span id="c0"></span></button><button onclick="mtab(1)" id="mt1" class="text-sm px-4 py-2 rounded-xl bg-slate-800">Plan Purchases <span id="c1"></span></button><button onclick="mtab(2)" id="mt2" class="text-sm px-4 py-2 rounded-xl bg-slate-800">Admins</button></div>
+<div id="box" class="bg-[#111c33] border border-white/5 rounded-2xl p-5"></div></div>
+<script>
+firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
+const db=firebase.database();let T=0;
+async function go(){
+  let m=(await db.ref('settings/master').once('value')).val();
+  if(!m){m={email:'mdswampodsarkar@gmail.com',pass:'srs321@@'};await db.ref('settings/master').set(m);}
+  if(u.value.trim().toLowerCase()===m.email&&p.value===m.pass){login.classList.add('hidden');main.classList.remove('hidden');load();}
+  else err.innerText='wrong master login';
+}
+function mtab(t){T=t;[0,1,2].forEach(i=>document.getElementById('mt'+i).className='text-sm px-4 py-2 rounded-xl '+(i===t?'bg-amber-400 text-slate-950 font-bold':'bg-slate-800'));load();}
+async function tg(t){try{const s=await db.ref('settings/telegram').once('value');const v=s.val();if(!v?.token||!v?.chat)return;await fetch(`https://api.telegram.org/bot${v.token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:v.chat,text:t})});}catch(e){}}
+async function load(){
+  if(T===0){const s=await db.ref('requests').once('value');const v=s.val()||{};const ks=Object.keys(v).filter(k=>v[k].status==='pending');c0.innerText=ks.length?`(${ks.length})`:'';
+    box.innerHTML=ks.map(k=>`<div class="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 mb-2 text-sm"><i data-lucide="user-plus" class="w-4 h-4"></i>${v[k].email}<span class="text-[11px] opacity-50">${new Date(v[k].ts).toLocaleString()}</span><button onclick="approve('${k}')" class="ml-auto bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1 rounded-lg">Approve</button><button onclick="rej('${k}')" class="bg-red-500/20 text-red-300 text-xs px-3 py-1 rounded-lg">Reject</button></div>`).join('')||'No pending requests';}
+  if(T===1){const s=await db.ref('purchases').once('value');const v=s.val()||{};const ks=Object.keys(v).filter(k=>v[k].status==='pending');c1.innerText=ks.length?`(${ks.length})`:'';
+    box.innerHTML=ks.map(k=>`<div class="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 mb-2 text-sm"><i data-lucide="crown" class="w-4 h-4 text-amber-300"></i><b>${v[k].plan}</b> • ${v[k].by}<span class="text-[11px] opacity-50">${new Date(v[k].ts).toLocaleString()}</span><button onclick="pok('${k}','${v[k].by}','${v[k].plan}')" class="ml-auto bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1 rounded-lg">Approve plan</button><button onclick="prj('${k}')" class="bg-red-500/20 text-red-300 text-xs px-3 py-1 rounded-lg">Reject</button></div>`).join('')||'No pending purchases';}
+  if(T===2){const s=await db.ref('admins').once('value');const v=s.val()||{};
+    box.innerHTML=Object.entries(v).map(([k,a])=>`<div class="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2 mb-2 text-sm"><i data-lucide="user" class="w-4 h-4"></i>${a.email} <span class="text-[11px] px-2 py-0.5 rounded-full ${a.status==='approved'?'bg-emerald-400/20 text-emerald-300':'bg-amber-400/20 text-amber-300'}">${a.status}</span><button onclick="dis('${k}')" class="ml-auto text-xs ${a.status==='approved'?'text-red-300':'text-emerald-300'}">${a.status==='approved'?'Disable':'Enable'}</button><button onclick="del('${k}')" class="text-xs opacity-50">Delete</button></div>`).join('')||'No sub-admins yet';}
+  lucide.createIcons();
+}
+async function approve(k){const r=(await db.ref('requests/'+k).once('value')).val();await db.ref('admins/'+k).set({email:r.email,pass:r.pass,status:'approved',plan:'free',ts:Date.now()});await db.ref('requests/'+k).remove();tg(`✅ Admin approved: ${r.email}`);load();}
+async function rej(k){await db.ref('requests/'+k).remove();load();}
+async function pok(k,by,plan){await db.ref('purchases/'+k).update({status:'approved'});const ak=by.toLowerCase().replace(/[.#$\[\]]/g,'_');const ex=await db.ref('admins/'+ak).once('value');if(ex.val())await db.ref('admins/'+ak).update({plan});await db.ref('settings/plan').set({tier:plan,exp:Date.now()+(plan==='monthly'?30:365)*864e5});tg(`💳 Plan approved: ${by} → ${plan}`);load();}
+async function prj(k){await db.ref('purchases/'+k).update({status:'rejected'});load();}
+async function dis(k){const a=(await db.ref('admins/'+k).once('value')).val();await db.ref('admins/'+k).update({status:a.status==='approved'?'disabled':'approved'});load();}
+async function del(k){if(confirm('delete admin?')){await db.ref('admins/'+k).remove();load();}}
+</script></body></html>
