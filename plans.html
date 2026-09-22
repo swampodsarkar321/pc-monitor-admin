@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+lay.innerHTML=nav('plans.html')+`<main class="flex-1 p-4 md:p-6 max-w-3xl space-y-4">
+<h1 class="text-2xl font-black flex items-center gap-2"><i data-lucide="crown" class="w-6 h-6"></i>Subscription Plan</h1>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5">Current plan: <b id="cur_plan" class="text-emerald-300">FREE</b> <span id="plan_exp" class="text-sm opacity-60"></span></div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 text-center space-y-2"><i data-lucide="gift" class="w-8 h-8 mx-auto opacity-70"></i><b class="text-lg">Free</b><div class="text-2xl font-black">৳0</div><div class="text-xs opacity-60">1 device<br>7-day history</div><button onclick="setPlan('free')" class="w-full bg-slate-700 rounded-xl py-2 text-sm font-bold">Select Free</button></div>
+<div class="bg-[#111c33] border-2 border-emerald-400/60 rounded-2xl p-5 text-center space-y-2"><i data-lucide="zap" class="w-8 h-8 mx-auto text-emerald-300"></i><b class="text-lg">Monthly</b><div class="text-2xl font-black">৳499<span class="text-xs font-normal opacity-60">/mo</span></div><div class="text-xs opacity-60">10 devices<br>30-day history<br>Telegram alerts</div><button onclick="setPlan('monthly')" class="w-full bg-emerald-400 text-slate-950 rounded-xl py-2 text-sm font-bold">Select Monthly</button></div>
+<div class="bg-[#111c33] border border-violet-500/40 rounded-2xl p-5 text-center space-y-2"><i data-lucide="gem" class="w-8 h-8 mx-auto text-violet-300"></i><b class="text-lg">Yearly</b><div class="text-2xl font-black">৳4,999<span class="text-xs font-normal opacity-60">/yr</span></div><div class="text-xs opacity-60">Unlimited devices<br>1-year history<br>Priority support</div><button onclick="setPlan('yearly')" class="w-full bg-violet-500 rounded-xl py-2 text-sm font-bold">Select Yearly</button></div>
+</div>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 text-sm opacity-70">Payment via bKash / Nagad (manual). After payment, contact admin to activate your plan.</div></main>`;
+if(window.lucide)lucide.createIcons();
+async function setPlan(t){if(isMod())return alert('Moderators have view-only access');const exp=t==='free'?null:Date.now()+(t==='monthly'?30:365)*864e5;await db.ref('settings/plan').set({tier:t,exp});loadPlan();}
+async function loadPlan(){try{const s=(await db.ref('settings/plan').once('value')).val()||{tier:'free'};cur_plan.innerText=s.tier.toUpperCase();plan_exp.innerText=s.exp?('valid until '+new Date(s.exp).toLocaleDateString()):'';}catch(e){}}
+loadPlan();
+</script></body></html>

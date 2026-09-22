@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+lay.innerHTML=nav('devices.html')+`<main class="flex-1 p-6"><h1 class="text-2xl font-black mb-1">🖥️ Devices</h1><p class="text-xs opacity-50 mb-4">Select a device — everything runs on that device</p><div id="g" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div></main>`;
+let NOTES={};
+db.ref('notes').on('value',s=>{NOTES=s.val()||{};});
+db.ref('events').limitToLast(500).on('value',s=>{const a=Object.values(s.val()||{});
+const m={};a.forEach(e=>{(m[e.clientId]||={tabs:0,clicks:0,last:0,beats:[]});if(e.type==='tab_change')m[e.clientId].tabs++;if(e.type==='click')m[e.clientId].clicks++;m[e.clientId].last=Math.max(m[e.clientId].last,e.ts);if(e.type==='heartbeat')m[e.clientId].beats.push(e.ts);});
+g.innerHTML=Object.entries(m).map(([id,v])=>{
+const online=(Date.now()-v.last)<90000;
+const note=NOTES[id]?.text||'';
+return `<div class="bg-[#111c33] border ${QDEV===id?'border-emerald-400':'border-white/5'} rounded-2xl p-5">
+<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${online?'bg-emerald-400 animate-pulse':'bg-red-500'}"></span><b>${id}</b><span class="text-[11px] ${online?'text-emerald-300':'text-red-300'}">${online?'● ONLINE':'○ offline'}</span></div>
+<div class="text-xs opacity-60">Last seen: ${new Date(v.last).toLocaleString()}</div>
+<div class="mt-2 text-sm flex items-center gap-3"><span class="flex items-center gap-1"><i data-lucide="globe" class="w-3.5 h-3.5"></i>${v.tabs} tabs</span><span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i>${v.clicks} clicks</span></div>
+<textarea id="n_${id}" placeholder="Note..." class="w-full mt-2 bg-black/30 rounded-lg px-2 py-1.5 text-sm">${note}</textarea>
+<button onclick="saveNote('${id}')" class="text-xs bg-slate-700 rounded-lg px-3 py-1 mt-1">Save note</button>
+<div class="flex flex-wrap gap-2 mt-3"><a href="dashboard.html?c=${id}" class="bg-violet-500 text-xs px-3 py-1.5 rounded-lg">Select & Open</a><a href="timeline.html?c=${id}" class="bg-slate-700 text-xs px-3 py-1.5 rounded-lg">Timeline</a><a href="captures.html?c=${id}" class="bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg">Captures</a><button onclick="shot('${id}')" class="bg-sky-600 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i data-lucide="camera" class="w-3.5 h-3.5"></i>Shot</button><button onclick="announce('${id}')" class="bg-violet-500 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i data-lucide="megaphone" class="w-3.5 h-3.5"></i>Announce</button><button onclick="csvOne('${id}')" class="bg-slate-700 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button></div></div>`;}).join('')||'No devices';});
+function shot(id){db.ref('commands/'+id).push({cmd:'screenshot',ts:Date.now()});alert('sent to '+id);}
+function announce(id){const t=prompt('Announcement for '+id+':');if(t)db.ref('commands/'+id).push({cmd:'message',text:t.replace(/</g,'&lt;'),ts:Date.now()});}
+function saveNote(id){db.ref('notes/'+id).set({text:document.getElementById('n_'+id).value,ts:Date.now()});alert('note saved');}
+async function csvOne(id){const a=await getEvents(1000);const f=a.filter(e=>e.clientId===id);
+let csv='type,url,sec,time\n'+f.map(e=>[e.type,(e.data?.url||'').replace(/,/g,';'),e.data?.sec||'',new Date(e.ts).toISOString()].join(',')).join('\n');
+const x=document.createElement('a');x.href=URL.createObjectURL(new Blob([csv]));x.download=id+'.csv';x.click();}
+</script></body></html>

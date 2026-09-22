@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+const SEL=new URLSearchParams(location.search).get('c')||'';
+lay.innerHTML=nav('timeline.html')+`<main class="flex-1 p-4 md:p-6"><div id="topbar"></div><div class="flex flex-wrap gap-2 mb-4"><span class="flex items-center gap-1.5 text-[11px] bg-red-500/15 border border-red-500/40 text-red-300 px-2.5 py-1 rounded-full"><span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>LIVE</span><span id="cnt" class="text-[11px] opacity-50 ml-auto"></span></div><div class="flex flex-wrap gap-2 mb-4"><input id="q" oninput="R()" placeholder="🔍 search..." class="bg-slate-800 rounded-xl px-4 py-2 w-56"><input id="dt" type="date" onchange="R()" class="bg-slate-800 rounded-xl px-3 py-2 text-sm"></div><div id="app" class="space-y-2 max-w-3xl"></div></main>
+<style>@keyframes slidein{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}.ev-new{animation:slidein .4s ease-out}.tl-wrap{position:relative;padding-left:26px}.tl-wrap:before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(#34d399,#22d3ee,#a78bfa);border-radius:2px}.tl-dot{position:absolute;left:-24px;top:14px;width:14px;height:14px;border-radius:50%;background:#0b1220;border:3px solid #34d399;z-index:1}.tl-item{position:relative;transition:background .2s}.tl-item:hover{background:rgba(255,255,255,.09)!important}</style>`;
+let ALL=[],SEEN=new Set();showLoader();connErr();mountTopbar('Timeline'+(SEL?' — '+SEL:''),'history');
+db.ref('events').limitToLast(400).on('value',s=>{hideLoader();ALL=Object.values(s.val()||{}).sort((a,b)=>b.ts-a.ts);R();});
+setInterval(()=>{if(ALL.length)R(true);},15000);
+function R(soft){const q=document.getElementById('q').value.toLowerCase();const dt=document.getElementById('dt').value;
+const f=ALL.filter(e=>(!SEL||e.clientId===SEL)&&(!q||(e.data?.url||'').toLowerCase().includes(q))&&(!dt||new Date(e.ts).toISOString().slice(0,10)===dt)).slice(0,150);
+cnt.innerText=f.length+' events • updated '+new Date().toLocaleTimeString();
+const ICON={tab_change:'globe',click:'mouse-pointer-click',screenshot:'camera',time_spent:'timer',search_log:'search',keyword_alert:'triangle-alert',blocked:'ban',violation:'lock',heartbeat:'heart-pulse',device_online:'power',idle:'moon',tabs_snapshot:'layers',shot_error:'circle-x',inactive_alert:'bed-double'};
+let h='<div class="tl-wrap space-y-2">',lh=-1;f.forEach((e,ix)=>{const hh=new Date(e.ts).getHours();if(hh!==lh){lh=hh;h+=`<div class="text-emerald-300 text-xs font-bold tracking-widest pt-1">— ${hh}:00 —</div>`;}
+const isNew=!SEEN.has(e.ts+'|'+e.type);SEEN.add(e.ts+'|'+e.type);
+const extra=e.type==='time_spent'?` <b class="text-sky-300">${e.data.sec}s</b>`:e.type==='search_log'?` <b>“${(e.data.query||'').slice(0,50)}”</b>`:e.type==='click'?` <b>${e.data.tag}</b> (${e.data.x},${e.data.y})`:'';
+h+=`<div class="tl-item ${isNew&&!soft?'ev-new':''} bg-[#111c33] rounded-xl px-4 py-2 text-sm"><span class="tl-dot"></span><div class="text-[11px] font-bold text-emerald-300">${new Date(e.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><i data-lucide="${ICON[e.type]||'circle'}" class="w-3.5 h-3.5 inline-block align-[-2px] opacity-70"></i> <span class="opacity-60 text-xs">[${e.type}]</span>${extra} <b>${(e.data?.title||'').slice(0,55)}</b><div class="text-xs text-sky-300 truncate">${e.data?.url||''}</div></div>`;});
+h+='</div>';app.innerHTML=f.length?h:emptyBox('No activity in this filter');}
+</script></body></html>

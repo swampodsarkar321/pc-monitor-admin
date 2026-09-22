@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script></head>
+<body class="bg-[#0b1220] text-slate-100"><div class="flex" id="lay"></div>
+<script src="common.js"></script><script>
+if(isMod()){alert('Moderators have view-only access');location.href='dashboard.html'+devQS();}
+lay.innerHTML=nav('settings.html')+`<main class="flex-1 p-4 md:p-6 max-w-2xl space-y-4">
+<h1 class="text-2xl font-black flex items-center gap-2"><i data-lucide="sliders-horizontal" class="w-6 h-6"></i>Settings</h1>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 space-y-2"><b class="flex items-center gap-2"><i data-lucide="user-cog" class="w-4 h-4"></i>Admin Login</b>
+<input id="ae" class="w-full bg-slate-800 rounded-lg px-3 py-2 text-sm" placeholder="admin email"><input id="ap" class="w-full bg-slate-800 rounded-lg px-3 py-2 text-sm" placeholder="new password">
+<button onclick="saveAdmin()" class="bg-emerald-400 text-slate-950 rounded-lg px-4 py-2 text-sm font-bold">Save admin</button></div>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 space-y-2"><b class="flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4"></i>Panel Theme</b>
+<div id="th" class="flex gap-2"></div></div>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 space-y-2"><b class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i>Moderators <span class="text-[11px] font-normal opacity-50">(view only — no block/announce)</span></b>
+<div class="flex gap-2"><input id="me" class="flex-1 bg-slate-800 rounded-lg px-3 py-2 text-sm" placeholder="mod email"><input id="mp" class="w-32 bg-slate-800 rounded-lg px-3 py-2 text-sm" placeholder="pass"><button onclick="addMod()" class="bg-violet-500 rounded-lg px-4 text-sm font-bold">Add</button></div>
+<div id="mlist" class="space-y-1 text-sm"></div></div>
+<div class="bg-[#111c33] border border-white/5 rounded-2xl p-5 space-y-2"><b class="flex items-center gap-2"><i data-lucide="eye-off" class="w-4 h-4"></i>Hidden Devices</b><div id="hlist" class="space-y-1 text-sm"></div></div></main>`;
+const THN={midnight:'🌙 Midnight',ocean:'🌊 Ocean',forest:'🌲 Forest',grape:'🍇 Grape'};
+th.innerHTML=Object.entries(THN).map(([k,v])=>`<button onclick="setTheme('${k}')" class="bg-slate-800 hover:bg-slate-700 rounded-xl px-4 py-2 text-sm">${v}</button>`).join('');
+(async()=>{try{const a=(await db.ref('settings/admin').once('value')).val();if(a)ae.value=a.email;}catch(e){}})();
+db.ref('mods').on('value',s=>{const v=s.val()||{};
+mlist.innerHTML=Object.entries(v).map(([k,m])=>`<div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>${m.email}<button onclick="delMod('${k}')" class="ml-auto text-red-400 text-xs">Remove</button></div>`).join('')||'<div class="opacity-50 text-xs">No moderators</div>';if(window.lucide)lucide.createIcons();});
+async function saveAdmin(){if(!ae.value||!ap.value)return alert('email+pass den');await db.ref('settings/admin').set({email:ae.value.trim().toLowerCase(),pass:ap.value});alert('admin updated — next login theke kaj korbe');}
+async function setTheme(n){await db.ref('settings/theme').set({name:n});alert('Theme: '+n+' — refreshing');location.reload();}
+const key=e=>e.toLowerCase().replace(/[.#$\[\]]/g,'_');
+async function addMod(){if(!me.value||!mp.value)return alert('email+pass den');await db.ref('mods/'+key(me.value)).set({email:me.value.trim().toLowerCase(),pass:mp.value});me.value='';mp.value='';}
+async function delMod(k){if(confirm('remove?'))await db.ref('mods/'+k).remove();}
+db.ref('settings/hidden').on('value',s=>{const v=s.val()||{};
+hlist.innerHTML=Object.keys(v).map(id=>`<div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"><i data-lucide="monitor" class="w-3.5 h-3.5"></i>${id}<button onclick="unhideDev('${id}')" class="ml-auto text-emerald-300 text-xs">Unhide</button></div>`).join('')||'<div class="opacity-50 text-xs">None hidden</div>';if(window.lucide)lucide.createIcons();});
+</script></body></html>
