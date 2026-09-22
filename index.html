@@ -31,19 +31,19 @@
 <div class="seg"><span id="pill" class="pill" style="left:4px"></span>
 <button id="tabA" onclick="tab('a')" class="on"><i data-lucide="crown" class="w-4 h-4"></i>Admin</button>
 <button id="tabM" onclick="tab('m')"><i data-lucide="eye" class="w-4 h-4"></i>Moderator</button></div>
-<div class="flex justify-center gap-6 text-xs"><button onclick="xtab('in')" id="xtIn" class="font-bold text-emerald-300 border-b-2 border-emerald-400 pb-0.5">Sign In</button><button onclick="xtab('up')" id="xtUp" class="opacity-50 hover:opacity-90">Create account</button></div>
 <div class="relative"><i data-lucide="mail" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-40"></i><input id="u" placeholder="Email address" class="w-full bg-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus:border-emerald-400"></div>
-<div class="relative"><i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-40"></i><input id="p" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')go()" class="w-full bg-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus:border-emerald-400"></div>
+<div class="relative"><i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-40"></i><input id="p" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')go('in')" class="w-full bg-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none focus:border-emerald-400"></div>
 <div id="err" class="text-xs text-red-400 min-h-[16px]"></div>
-<button onclick="go()" id="goBtn" class="w-full font-bold py-2.5 rounded-xl text-slate-950 flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#34d399,#22d3ee)"><i data-lucide="log-in" class="w-4 h-4"></i>Sign In</button>
+<button onclick="go('in')" class="w-full font-bold py-2.5 rounded-xl text-slate-950 flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#34d399,#22d3ee)"><i data-lucide="log-in" class="w-4 h-4"></i>Sign In</button>
+<button onclick="go('up')" class="w-full font-semibold py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center gap-2 text-sm"><i data-lucide="user-plus" class="w-4 h-4"></i>Create Account</button>
+<p class="text-[11px] opacity-40 text-center">New accounts need master approval</p>
 </div></div></div>
 <script>
 firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
-const db=firebase.database();let mode='a',xmode='in';
+const db=firebase.database();let mode='a';
 function tab(m){mode=m;pill.style.left=m==='a'?'4px':'calc(50% + 0px)';tabA.classList.toggle('on',m==='a');tabM.classList.toggle('on',m==='m');}
-function xtab(m){xmode=m;xtIn.className=m==='in'?'font-bold text-emerald-300 border-b-2 border-emerald-400 pb-0.5':'opacity-50 hover:opacity-90';xtUp.className=m==='up'?'font-bold text-emerald-300 border-b-2 border-emerald-400 pb-0.5':'opacity-50 hover:opacity-90';goBtn.innerHTML=m==='in'?'Sign In':'Request Account';}
 const key=e=>e.toLowerCase().replace(/[.#$\[\]]/g,'_');
-async function go(){
+async function go(xmode){
   const em=u.value.trim().toLowerCase(),pw=p.value;if(!em||!pw){err.innerText='Enter email and password';return;}
   err.innerText='Verifying...';
   try{
