@@ -15,7 +15,7 @@ lay.innerHTML=nav('plans.html')+`<main class="flex-1 p-4 md:p-6 max-w-3xl space-
 if(window.lucide)lucide.createIcons();
 async function setPlan(t){if(isMod())return alert('Moderators have view-only access');const exp=t==='free'?null:Date.now()+(t==='monthly'?30:365)*864e5;await db.ref('settings/plan').set({tier:t,exp});loadPlan();}
 async function buy(plan){if(isMod())return alert('Moderators have view-only access');const by=myId()||'owner';
-await db.ref('purchases').push({by,plan,status:'pending',ts:Date.now()});alert('Purchase request sent — master will approve');}
+await db.ref('purchases').push({by,plan,status:'pending',ts:Date.now()});openSupport(plan);}
 async function loadPlan(){try{const s=(await db.ref('settings/plan').once('value')).val()||{tier:'free'};cur_plan.innerText=s.tier.toUpperCase();plan_exp.innerText=s.exp?('valid until '+new Date(s.exp).toLocaleDateString()):'';}catch(e){}}
 loadPlan();
 </script></body></html>

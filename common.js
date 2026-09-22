@@ -175,7 +175,41 @@ function mountTopbar(title,icon){
   <span class="flex items-center gap-1.5 text-[11px] bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 px-2.5 py-1 rounded-full"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE</span></div>`;
   if(window.lucide)lucide.createIcons();
 }
-window.addEventListener('load',()=>{devicePicker(false);fab();offlineWatch();weeklyReport();setInterval(offlineWatch,5*60*1000);});
+window.addEventListener('load',()=>{devicePicker(false);fab();chatWidget();offlineWatch();weeklyReport();setInterval(offlineWatch,5*60*1000);});
+// ---- support chat (floating, until master closes) ----
+function chatKey(){return 'support/'+(myId()||'owner').replace(/[.#$\[\]]/g,'_');}
+function chatWidget(){
+  if(isMod()||!(window.name||'').startsWith('nexa:'))return;
+  if(document.getElementById('chatw'))return;
+  const w=document.createElement('div');w.id='chatw';w.className='fixed bottom-5 left-5 z-40';w.style.display='none';
+  w.innerHTML=`<button id="chatbtn" onclick="chatToggle()" class="w-14 h-14 rounded-full grid place-items-center text-slate-950 shadow-2xl" style="background:linear-gradient(135deg,#34d399,#22d3ee)"><i data-lucide="message-circle" class="w-6 h-6"></i></button>
+  <div id="chatbox" class="hidden mb-2 w-80 max-w-[85vw] bg-[#111c33] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"><div class="px-4 py-2.5 font-bold text-sm border-b border-white/5">Support Chat</div><div id="chatmsgs" class="h-64 overflow-auto p-3 space-y-2 text-sm"></div><div class="flex gap-2 p-2 border-t border-white/5"><input id="chat_in" placeholder="Type message..." class="flex-1 bg-black/30 rounded-lg px-2.5 py-2 text-sm outline-none"><button onclick="chatSend()" class="bg-emerald-400 text-slate-950 rounded-lg px-3 text-sm font-bold">Send</button></div></div>`;
+  document.body.appendChild(w);
+  if(window.lucide)lucide.createIcons();
+  db.ref(chatKey()).on('value',s=>{
+    const v=s.val();
+    if(!v||!v.msgs){w.style.display='none';return;}
+    if(v.closed){w.style.display='none';return;}
+    w.style.display='';
+    chatmsgs.innerHTML=Object.values(v.msgs).map(m=>`<div class="${m.by==='master'?'bg-white/5':'bg-emerald-400/15'} rounded-xl px-3 py-1.5"><div class="text-[10px] opacity-50">${m.by} • ${new Date(m.ts).toLocaleTimeString()}</div>${m.text}</div>`).join('');
+    chatmsgs.scrollTop=chatmsgs.scrollHeight;
+  });
+}
+function chatToggle(){document.getElementById('chatbox').classList.toggle('hidden');}
+async function chatSend(){const t=document.getElementById('chat_in').value.trim();if(!t)return;document.getElementById('chat_in').value='';
+await db.ref(chatKey()+'/msgs').push({by:myId()||'admin',text:t.replace(/</g,'&lt;'),ts:Date.now()});await db.ref(chatKey()+'/closed').remove();}
+function openSupport(plan){db.ref(chatKey()).update({plan:plan||'',closed:null,ts:Date.now()});db.ref(chatKey()+'/msgs').push({by:myId()||'admin',text:'Hi, I want the '+(plan||'plan')+'. Please activate.',ts:Date.now()});setTimeout(()=>{const b=document.getElementById('chatbox');if(b)b.classList.remove('hidden');},600);}
+// ---- anti-copy: devtools open hole black screen + no right-click ----
+(function(){
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='U'))e.preventDefault();});
+  setInterval(()=>{
+    const open=Math.abs(window.outerWidth-window.innerWidth)>170||Math.abs(window.outerHeight-window.innerHeight)>170;
+    let ov=document.getElementById('ncopy');
+    if(open){if(!ov){ov=document.createElement('div');ov.id='ncopy';ov.style.cssText='position:fixed;inset:0;background:#000;z-index:99999';document.body.appendChild(ov);}}
+    else if(ov)ov.remove();
+  },1000);
+})();
 // floating capture button (admin only — mod view-only)
 function fab(){
   if(isMod())return;

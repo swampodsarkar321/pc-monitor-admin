@@ -22,7 +22,7 @@
 <button onclick="location.reload()" class="ml-auto text-xs bg-white/10 hover:bg-white/15 rounded-xl px-4 py-2 flex items-center gap-2"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Lock</button>
 </header>
 <div class="p-4 md:p-8 max-w-4xl mx-auto space-y-4">
-<div class="flex gap-2"><button onclick="mtab(0)" id="mt0" class="text-sm px-4 py-2 rounded-xl font-bold" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03">Requests <span id="c0"></span></button><button onclick="mtab(1)" id="mt1" class="text-sm px-4 py-2 rounded-xl bg-white/10">Purchases <span id="c1"></span></button><button onclick="mtab(2)" id="mt2" class="text-sm px-4 py-2 rounded-xl bg-white/10">Admins</button></div>
+<div class="flex gap-2"><button onclick="mtab(0)" id="mt0" class="text-sm px-4 py-2 rounded-xl font-bold" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03">Requests <span id="c0"></span></button><button onclick="mtab(1)" id="mt1" class="text-sm px-4 py-2 rounded-xl bg-white/10">Purchases <span id="c1"></span></button><button onclick="mtab(2)" id="mt2" class="text-sm px-4 py-2 rounded-xl bg-white/10">Admins</button><button onclick="mtab(3)" id="mt3" class="text-sm px-4 py-2 rounded-xl bg-white/10">Support <span id="c3"></span></button></div>
 <div id="box" class="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur"></div></div></div>
 <script>
 firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
@@ -33,7 +33,7 @@ async function go(){
   if(u.value.trim().toLowerCase()===m.email&&p.value===m.pass){login.classList.add('hidden');main.classList.remove('hidden');stats();load();}
   else err.innerText='wrong master login';
 }
-function mtab(t){T=t;[0,1,2].forEach(i=>document.getElementById('mt'+i).className='text-sm px-4 py-2 rounded-xl '+(i===t?'font-bold':'bg-white/10'));if(t===0)mt0.style.cssText='background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03';else mt0.style.cssText='';load();}
+function mtab(t){T=t;[0,1,2,3].forEach(i=>document.getElementById('mt'+i).className='text-sm px-4 py-2 rounded-xl '+(i===t?'font-bold':'bg-white/10'));if(t===0)mt0.style.cssText='background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03';else mt0.style.cssText='';load();}
 async function stats(){try{const r=await db.ref('requests').once('value');s_req.innerText=Object.values(r.val()||{}).filter(x=>x.status==='pending').length;
 const p=await db.ref('purchases').once('value');s_buy.innerText=Object.values(p.val()||{}).filter(x=>x.status==='pending').length;
 const a=await db.ref('admins').once('value');s_adm.innerText=Object.keys(a.val()||{}).length;}catch(e){}}
@@ -45,6 +45,9 @@ async function load(){stats();
     box.innerHTML=ks.map(k=>`<div class="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 mb-2 text-sm"><i data-lucide="gem" class="w-4 h-4 text-emerald-300"></i><b>${v[k].plan}</b> • ${v[k].by}<span class="text-[11px] opacity-50">${new Date(v[k].ts).toLocaleString()}</span><button onclick="pok('${k}','${v[k].by}','${v[k].plan}')" class="ml-auto text-xs font-bold px-3 py-1.5 rounded-lg text-emerald-950 bg-emerald-300">Approve plan</button><button onclick="prj('${k}')" class="bg-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg">Reject</button></div>`).join('')||'<div class="opacity-50 text-sm">No pending purchases</div>';}
   if(T===2){const s=await db.ref('admins').once('value');const v=s.val()||{};
     box.innerHTML=Object.entries(v).map(([k,a])=>`<div class="flex items-center gap-2 bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 mb-2 text-sm"><i data-lucide="user" class="w-4 h-4"></i>${a.email} <span class="text-[11px] px-2 py-0.5 rounded-full ${a.status==='approved'?'bg-emerald-400/20 text-emerald-300':'bg-amber-400/20 text-amber-300'}">${a.status}</span><span class="text-[11px] opacity-50">${a.plan||'free'}</span><button onclick="dis('${k}')" class="ml-auto text-xs ${a.status==='approved'?'text-red-300':'text-emerald-300'}">${a.status==='approved'?'Disable':'Enable'}</button><button onclick="del('${k}')" class="text-xs opacity-50">Delete</button></div>`).join('')||'<div class="opacity-50 text-sm">No sub-admins yet</div>';}
+  if(T===3){const s=await db.ref('support').once('value');const v=s.val()||{};const ks=Object.keys(v).filter(k=>v[k].msgs&&!v[k].closed);c3.innerText=ks.length?`(${ks.length})`:'';
+    box.innerHTML=ks.map(k=>{const ms=Object.values(v[k].msgs);const last=ms[ms.length-1];
+    return `<div class="bg-white/5 border border-white/5 rounded-xl p-3 mb-2 text-sm"><b>${k}</b> <span class="text-[11px] opacity-50">${v[k].plan||''} • last: ${last.text.slice(0,60)}</span><div class="max-h-40 overflow-auto my-2 space-y-1">${ms.slice(-8).map(m=>`<div class="bg-black/30 rounded-lg px-2 py-1 text-xs"><b>${m.by}:</b> ${m.text}</div>`).join('')}</div><div class="flex gap-2"><input id="mr_${k}" placeholder="Reply..." class="flex-1 bg-black/30 rounded-lg px-2 py-1.5 text-sm"><button onclick="mreply('${k}')" class="bg-amber-400 text-amber-950 text-xs font-bold px-3 rounded-lg">Send</button><button onclick="mclose('${k}')" class="bg-red-500/20 text-red-300 text-xs px-3 rounded-lg">Close chat</button></div></div>`;}).join('')||'<div class="opacity-50 text-sm">No open chats</div>';}
   lucide.createIcons();
 }
 async function approve(k){const r=(await db.ref('requests/'+k).once('value')).val();await db.ref('admins/'+k).set({email:r.email,pass:r.pass,status:'approved',plan:'free',ts:Date.now()});await db.ref('requests/'+k).remove();tg(`✅ Admin approved: ${r.email}`);load();}
@@ -53,4 +56,6 @@ async function pok(k,by,plan){await db.ref('purchases/'+k).update({status:'appro
 async function prj(k){await db.ref('purchases/'+k).update({status:'rejected'});load();}
 async function dis(k){const a=(await db.ref('admins/'+k).once('value')).val();await db.ref('admins/'+k).update({status:a.status==='approved'?'disabled':'approved'});load();}
 async function del(k){if(confirm('delete admin?')){await db.ref('admins/'+k).remove();load();}}
+async function mreply(k){const t=document.getElementById('mr_'+k).value.trim();if(!t)return;await db.ref('support/'+k+'/msgs').push({by:'master',text:t.replace(/</g,'&lt;'),ts:Date.now()});load();}
+async function mclose(k){await db.ref('support/'+k).update({closed:Date.now()});load();}
 </script></body></html>
