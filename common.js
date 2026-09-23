@@ -40,6 +40,9 @@ button,a{transition:transform .12s ease,background .15s ease,box-shadow .15s eas
 function showLoader(t){let l=document.getElementById('loader');if(!l){l=document.createElement('div');l.id='loader';l.className='fixed inset-0 z-[60] p-6';l.style.backgroundColor='#0b1220';document.body.appendChild(l);}l.style.display='block';l.innerHTML=`<div class="max-w-6xl mx-auto space-y-4 pt-10"><div class="skel h-8 w-64"></div><div class="grid grid-cols-4 gap-4"><div class="skel h-28"></div><div class="skel h-28"></div><div class="skel h-28"></div><div class="skel h-28"></div></div><div class="skel h-64"></div><div class="text-center text-xs opacity-50">${t||'Loading live data...'}</div></div>`;}
 function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<10)return'just now';if(s<60)return s+'s ago';const m=Math.floor(s/60);if(m<60)return m+' min ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function emptyBox(t){return `<div class="text-center py-8 opacity-50"><div class="lottie" data-h="90"></div><div class="text-4xl mb-2">📭</div><div class="text-sm">${t}</div></div>`;}
+// SHA-256 (passwords never stored plain)
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('nexa$'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function passOk(input,stored){if(!stored)return false;if(input===stored){return 'plain';}return (await sha(input))===stored;}
 // browser + OS (extension exact pathay, fallback: UA parse)
 function parseUAfromEvent(e){const d=(e&&e.data)||{};if(d.browser)return (d.browser+(d.os?' • '+d.os:''));return parseUA(d.ua);}
 function parseUA(ua){ua=ua||'';let b='Unknown',os='Unknown';

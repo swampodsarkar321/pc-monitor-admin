@@ -27,10 +27,13 @@
 <script>
 firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
 const db=firebase.database();let T=0;
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('nexa$'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function passOk(input,stored){if(!stored)return false;if(input===stored)return 'plain';return (await sha(input))===stored?true:false;}
 async function go(){
   let m=(await db.ref('settings/master').once('value')).val();
-  if(!m){m={email:'mdswampodsarkar@gmail.com',pass:'srs321@@'};await db.ref('settings/master').set(m);}
-  if(u.value.trim().toLowerCase()===m.email&&p.value===m.pass){login.classList.add('hidden');main.classList.remove('hidden');stats();load();}
+  if(!m){m={email:'mdswampodsarkar@gmail.com',pass:await sha('srs321@@')};await db.ref('settings/master').set(m);}
+  const ok=await passOk(p.value,m.pass);
+  if(u.value.trim().toLowerCase()===m.email&&ok){if(ok==='plain')await db.ref('settings/master').update({pass:await sha(p.value)});login.classList.add('hidden');main.classList.remove('hidden');stats();load();}
   else err.innerText='wrong master login';
 }
 function mtab(t){T=t;[0,1,2,3].forEach(i=>document.getElementById('mt'+i).className='text-sm px-4 py-2 rounded-xl '+(i===t?'font-bold':'bg-white/10'));if(t===0)mt0.style.cssText='background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#451a03';else mt0.style.cssText='';load();}

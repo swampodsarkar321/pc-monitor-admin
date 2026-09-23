@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "events": {
+      ".read": true,
+      ".write": true,
+      "$k": { ".validate": "newData.hasChildren(['clientId','type','ts']) && newData.child('ts').isNumber()" }
+    },
+    "commands": { ".read": true, ".write": true },
+    "live": { ".read": true, ".write": true },
+    "requests": { ".read": true, ".write": true },
+    "purchases": { ".read": true, ".write": true },
+    "support": { ".read": true, ".write": true },
+    "notes": { ".read": true, ".write": true },
+    "lockdown": { ".read": true, ".write": true },
+    "schedules": { ".read": true, ".write": true },
+    "autoshot": { ".read": true, ".write": true },
+    "global_block": { ".read": true, ".write": true },
+    "mods": { ".read": true, ".write": true },
+    "admins": { ".read": true, ".write": true },
+    "settings": { ".read": true, ".write": true }
+  }
+}

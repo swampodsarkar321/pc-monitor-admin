@@ -41,6 +41,8 @@
 <script>
 firebase.initializeApp({databaseURL:"https://fram-and-go-default-rtdb.asia-southeast1.firebasedatabase.app"});
 const db=firebase.database();let mode='a';
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('nexa$'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function passOk(input,stored){if(!stored)return false;if(input===stored)return 'plain';return (await sha(input))===stored?true:false;}
 function tab(m){mode=m;pill.style.left=m==='a'?'4px':'calc(50% + 0px)';tabA.classList.toggle('on',m==='a');tabM.classList.toggle('on',m==='m');}
 const key=e=>e.toLowerCase().replace(/[.#$\[\]]/g,'_');
 async function go(xmode){
@@ -48,22 +50,25 @@ async function go(xmode){
   err.innerText='Verifying...';
   try{
     const ad=await db.ref('settings/admin').once('value');
-    if(!ad.val())await db.ref('settings/admin').set({email:'mdswampodsarkar@gmail.com',pass:'srs321@@'});
+    if(!ad.val())await db.ref('settings/admin').set({email:'mdswampodsarkar@gmail.com',pass:await sha('srs321@@')});
     if(xmode==='up'){
       if(mode!=='a'){err.innerText='Only admin accounts can request';return;}
-      await db.ref('requests/'+key(em)).set({email:em,pass:pw,plan:'free',status:'pending',ts:Date.now()});
-      err.innerText='';alert('Request sent — wait for master approval');return;
+      await db.ref('requests/'+key(em)).set({email:em,pass:await sha(pw),plan:'free',status:'pending',ts:Date.now()});
+      err.innerText='';alert('Request sent — wait for approval');return;
     }
     if(mode==='a'){
       const a=(await db.ref('settings/admin').once('value')).val();
-      if(em===a.email.toLowerCase()&&pw===a.pass){window.name='nexa:admin';location.href='dashboard.html';return;}
+      const okA=await passOk(pw,a.pass);
+      if(em===a.email.toLowerCase()&&okA){if(okA==='plain')await db.ref('settings/admin').update({pass:await sha(pw)});window.name='nexa:admin';location.href='dashboard.html';return;}
       const ap=(await db.ref('admins/'+key(em)).once('value')).val();
-      if(ap&&ap.status==='approved'&&pw===ap.pass){window.name='nexa:admin:'+em;location.href='dashboard.html';}
-      else if(ap&&ap.status!=='approved')err.innerText='Account pending master approval';
+      const okM=ap?await passOk(pw,ap.pass):false;
+      if(ap&&ap.status==='approved'&&okM){if(okM==='plain')await db.ref('admins/'+key(em)).update({pass:await sha(pw)});window.name='nexa:admin:'+em;location.href='dashboard.html';}
+      else if(ap&&ap.status!=='approved')err.innerText='Account pending approval';
       else err.innerText='Invalid admin credentials';
     }else{
       const m=(await db.ref('mods/'+key(em)).once('value')).val();
-      if(m&&pw===m.pass){window.name='nexa:mod:'+em;location.href='dashboard.html';}
+      const okD=m?await passOk(pw,m.pass):false;
+      if(m&&okD){if(okD==='plain')await db.ref('mods/'+key(em)).update({pass:await sha(pw)});window.name='nexa:mod:'+em;location.href='dashboard.html';}
       else err.innerText='Invalid moderator credentials';
     }
   }catch(e){err.innerText='Connection error — check your internet';}

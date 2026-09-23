@@ -20,10 +20,10 @@ th.innerHTML=Object.entries(THN).map(([k,v])=>`<button onclick="setTheme('${k}')
 (async()=>{try{const a=(await db.ref('settings/admin').once('value')).val();if(a)ae.value=a.email;}catch(e){}})();
 db.ref('mods').on('value',s=>{const v=s.val()||{};
 mlist.innerHTML=Object.entries(v).map(([k,m])=>`<div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"><i data-lucide="user" class="w-3.5 h-3.5"></i>${m.email}<button onclick="delMod('${k}')" class="ml-auto text-red-400 text-xs">Remove</button></div>`).join('')||'<div class="opacity-50 text-xs">No moderators</div>';if(window.lucide)lucide.createIcons();});
-async function saveAdmin(){if(!ae.value||!ap.value)return alert('email+pass den');await db.ref('settings/admin').set({email:ae.value.trim().toLowerCase(),pass:ap.value});alert('admin updated — next login theke kaj korbe');}
+async function saveAdmin(){if(!ae.value||!ap.value)return alert('email+pass den');await db.ref('settings/admin').set({email:ae.value.trim().toLowerCase(),pass:await sha(ap.value)});alert('admin updated — next login theke kaj korbe');}
 async function setTheme(n){await db.ref('settings/theme').set({name:n});alert('Theme: '+n+' — refreshing');location.reload();}
 const key=e=>e.toLowerCase().replace(/[.#$\[\]]/g,'_');
-async function addMod(){if(!me.value||!mp.value)return alert('email+pass den');await db.ref('mods/'+key(me.value)).set({email:me.value.trim().toLowerCase(),pass:mp.value});me.value='';mp.value='';}
+async function addMod(){if(!me.value||!mp.value)return alert('email+pass den');await db.ref('mods/'+key(me.value)).set({email:me.value.trim().toLowerCase(),pass:await sha(mp.value)});me.value='';mp.value='';}
 async function delMod(k){if(confirm('remove?'))await db.ref('mods/'+k).remove();}
 db.ref('settings/hidden').on('value',s=>{const v=s.val()||{};
 hlist.innerHTML=Object.keys(v).map(id=>`<div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"><i data-lucide="monitor" class="w-3.5 h-3.5"></i>${id}<button onclick="unhideDev('${id}')" class="ml-auto text-emerald-300 text-xs">Unhide</button></div>`).join('')||'<div class="opacity-50 text-xs">None hidden</div>';if(window.lucide)lucide.createIcons();});
