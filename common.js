@@ -120,7 +120,7 @@ function devicePicker(force){
     const ids=Object.keys(m).filter(id=>!HIDDEN[id]&&canSee(id));
     document.getElementById('devpick_list').innerHTML=ids.length?ids.map(id=>{
       const online=(Date.now()-m[id].last)<ONLINE_MS;
-      return `<button onclick="location.href='${base}?c=${encodeURIComponent(id)}'" class="w-full text-left px-4 py-3 rounded-2xl bg-white/5 hover:bg-emerald-400 hover:text-slate-950 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${online?'bg-emerald-400':'bg-red-500'}"></span><span><b>${id}</b><span class="block text-[11px] opacity-60">${parseUAfromEvent({data:m[id].info})}</span></span><span class="text-[11px] opacity-60 ml-auto">${online?'online':new Date(m[id].last).toLocaleTimeString()}</span></button>`;}).join(''):'<div class="text-sm opacity-50">No devices yet</div>';
+      return `<button onclick="location.href='${base}?c=${encodeURIComponent(id)}'" class="w-full text-left px-4 py-3 rounded-2xl bg-white/5 hover:bg-emerald-400 hover:text-slate-950 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${online?'bg-emerald-400':'bg-red-500'}"></span><span><b>${id}</b><span class="block text-[11px] opacity-60">${parseUAfromEvent({data:m[id].info})}</span></span><span class="text-[11px] opacity-60 ml-auto">${online?'online':new Date(m[id].last).toLocaleTimeString()}</span></button>`;}).join(''):'<div class="text-sm opacity-60 text-center py-4">No devices assigned to you yet.<br>Contact master admin for access.</div>';
   });
 }
 // offline alert: 5min+ silent device -> telegram (1h e 1bar per device)
