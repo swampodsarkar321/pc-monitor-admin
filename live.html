@@ -24,6 +24,7 @@ function setSt(t){st.innerText=t;}
 function toggle(){if(iv)stop();else start();}
 function start(){
   if(!QDEV)return alert('Select a device first');
+  if(!canSee(QDEV))return alert('No access to this device');
   frames=0;t0=Date.now();
   const grab=()=>db.ref('commands/'+QDEV).push({cmd:'screenshot',ts:Date.now(),live:true});
   grab();iv=setInterval(grab,1200);goBtn.innerText='Stop Live';setSt('LIVE');

@@ -9,7 +9,15 @@ function myId(){return (window.name||'').split(':')[2]||'';}
 const QDEV=new URLSearchParams(location.search).get('c')||'';
 const ONLINE_MS=90000;
 let HIDDEN={};
+let OWN={}; // devices/{id} -> {owner}
+let ME=(window.name||'').split(':')[2]||'owner';
+let MYOWNER=null; // mod -> parent admin email
+if(ROLE==='mod')db.ref('mods/'+ME.replace(/[.#$\[\]]/g,'_')).once('value').then(s=>{MYOWNER=(s.val()||{}).owner||null;});
+function effOwner(){return ROLE==='mod'?(MYOWNER||ME):ME;}
+function canSee(id){if(effOwner()==='owner')return true;return OWN[id]&&OWN[id].owner===effOwner();}
 db.ref('settings/hidden').on('value',s=>{HIDDEN=s.val()||{};});
+db.ref('devices').on('value',s=>{OWN=s.val()||{};});
+function canSee(id){if(ROLE!=='mod'&&ME==='owner')return true;return OWN[id]&&OWN[id].owner===ME;}
 async function hideDev(id){await db.ref('settings/hidden/'+id).set(true);}
 async function unhideDev(id){await db.ref('settings/hidden/'+id).remove();}
 function devQS(){return QDEV?('?c='+encodeURIComponent(QDEV)):'';}
@@ -109,7 +117,7 @@ function devicePicker(force){
   db.ref('events').limitToLast(500).once('value').then(s=>{
     const a=Object.values(s.val()||{});const m={};
     a.forEach(e=>{(m[e.clientId]||={last:0,info:null});m[e.clientId].last=Math.max(m[e.clientId].last,e.ts);if(e.type==='device_online'&&e.data)m[e.clientId].info=e.data;});
-    const ids=Object.keys(m).filter(id=>!HIDDEN[id]);
+    const ids=Object.keys(m).filter(id=>!HIDDEN[id]&&canSee(id));
     document.getElementById('devpick_list').innerHTML=ids.length?ids.map(id=>{
       const online=(Date.now()-m[id].last)<ONLINE_MS;
       return `<button onclick="location.href='${base}?c=${encodeURIComponent(id)}'" class="w-full text-left px-4 py-3 rounded-2xl bg-white/5 hover:bg-emerald-400 hover:text-slate-950 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${online?'bg-emerald-400':'bg-red-500'}"></span><span><b>${id}</b><span class="block text-[11px] opacity-60">${parseUAfromEvent({data:m[id].info})}</span></span><span class="text-[11px] opacity-60 ml-auto">${online?'online':new Date(m[id].last).toLocaleTimeString()}</span></button>`;}).join(''):'<div class="text-sm opacity-50">No devices yet</div>';

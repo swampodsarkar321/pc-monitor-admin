@@ -12,6 +12,7 @@ let SHOTS=[];
 function fsize(d){const b=(d||'').split(',')[1]||'';const kb=Math.round(b.length*3/4/1024);return kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';}
 function fname(e){const d=new Date(e.ts);const p=n=>String(n).padStart(2,'0');return `${e.clientId}_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.jpg`;}
 db.ref('events').limitToLast(300).on('value',s=>{hideLoader();
+if(SEL&&!canSee(SEL)){g.innerHTML=emptyBox('No access to this device');return;}
 SHOTS=Object.values(s.val()||{}).sort((a,b)=>b.ts-a.ts).filter(e=>e.type==='screenshot'&&(!SEL||e.clientId===SEL)).slice(0,60);
 g.innerHTML=SHOTS.map((e,i)=>{const d=new Date(e.ts);
 return `<button onclick="openLb(${i})" class="w-full text-left grid grid-cols-12 gap-2 items-center px-4 py-3 border-b border-white/5 hover:bg-emerald-400/10">
